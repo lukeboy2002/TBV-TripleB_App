@@ -1,56 +1,86 @@
-# Welcome to your Expo app 👋
+# TripleB-app
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+De mobiele app (iPhone en Android) voor de spelers van TBV TripleB. Gebouwd met
+[Expo](https://expo.dev) en React Native. De app praat met de API van de site
+[tbv-tripleb.nl](https://tbv-tripleb.nl) (repo `TBV-TripleB`, map `routes/api.php`),
+dus alles wat je in de app doet staat meteen op de site.
 
-## Get started
+## Zelf draaien
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Je hebt nodig: **Node.js (LTS)** op je computer en de app **Expo Go** op je telefoon.
 
 ```bash
-npm run reset-project
+cd ~/Herd
+git clone https://github.com/lukeboy2002/TBV-TripleB_App.git
+cd TBV-TripleB_App
+npm install
+cp .env.example .env      # en zet het juiste API-adres erin
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Scan de QR-code met je camera (iPhone) of met Expo Go (Android). De app opent in Expo Go.
+Elke keer dat je een bestand opslaat, ververst de app op je telefoon vanzelf.
 
-### Other setup steps
+### Tegen je lokale Herd-site testen
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Je telefoon kan `tbv-tripleb.test` niet bereiken, dat adres bestaat alleen op je Mac.
+Twee manieren:
 
-## Learn more
+1. `herd share` in de map van de site. Je krijgt een https-link; zet die in `.env`
+   als `EXPO_PUBLIC_API_URL=https://...link.../api`.
+2. Of gewoon tegen de live site testen (`https://tbv-tripleb.nl/api`), zodra de API daar staat.
 
-To learn more about developing your project with Expo, look at the following resources:
+Na het aanpassen van `.env` moet je `npx expo start` opnieuw starten.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Handige commando's
 
-## Join the community
+| Commando | Wat het doet |
+|---|---|
+| `npx expo start` | Ontwikkelserver starten |
+| `npm run typecheck` | TypeScript controleren (vangt typfouten) |
+| `npm run lint` | Code-stijl controleren |
+| `npx expo install <pakket>` | Pakket toevoegen in een versie die bij Expo SDK 58 past (gebruik dit in plaats van `npm install <pakket>`) |
 
-Join our community of developers creating universal apps.
+## Hoe de code in elkaar zit
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+src/
+  app/                    ← elk bestand is een scherm (Expo Router)
+    _layout.tsx           ← buitenste laag: cache, login-status, inlog-bewaking
+    login.tsx             ← inlogscherm
+    (tabs)/               ← de tabbladen onderin (haakjes = niet in de URL)
+      _layout.tsx         ← de tabbalk zelf
+      index.tsx           ← Stand
+      games/index.tsx     ← Uitslagen
+      games/[id].tsx      ← één wedstrijd ([id] = parameter, zoals {game} in Laravel)
+      live.tsx            ← wedstrijd starten, spelers af, bekerfoto
+      agenda/index.tsx    ← Agenda
+      agenda/[slug].tsx   ← één event
+      profile.tsx         ← Mijn cijfers en uitloggen
+  components/             ← herbruikbare stukjes (zoals Blade-componenten)
+  constants/theme.ts      ← kleuren en afstanden (licht en donker)
+  lib/
+    api.ts                ← fetch naar Laravel, met token en foutafhandeling
+    auth.tsx              ← inloggen, token in de kluis van de telefoon
+    queries.ts            ← alle data-verzoeken (TanStack Query)
+    types.ts              ← TypeScript-types die passen op de Laravel Resources
+    config.ts             ← het API-adres
+```
+
+### Vergelijking met Laravel
+
+| Laravel | Deze app |
+|---|---|
+| `routes/web.php` | de bestanden in `src/app/` |
+| `auth`-middleware | `Stack.Protected` in `src/app/_layout.tsx` |
+| Blade-component | React-component in `src/components/` |
+| Livewire-property + `wire:model` | `useState` + `onChangeText` |
+| `auth()->user()` | `useAuth().user` |
+| Eloquent-query | `useQuery` in `src/lib/queries.ts` |
+| Tailwind-classes | `StyleSheet.create({...})` |
+
+## Naar de telefoons van de spelers
+
+Later, met EAS Build (`npx eas-cli@latest build`): voor iPhone via TestFlight
+(Apple Developer-account nodig), voor Android via Google Play internal testing
+of een los installatiebestand.
